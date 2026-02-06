@@ -10,13 +10,17 @@ const MOCK_USER: User = {
 };
 
 export const authService = {
-    login: async (_email: string, _password: string): Promise<{ user: User; token: string }> => {
-        // Simulate API call
+    login: async (username: string, _password: string): Promise<{ user: User; token: string; refreshToken: string }> => {
+        // Simulate API delay
         return new Promise((resolve) => {
             setTimeout(() => {
                 resolve({
-                    user: MOCK_USER,
+                    user: {
+                        ...MOCK_USER,
+                        name: username // Use the entered username
+                    },
                     token: 'mock-jwt-token',
+                    refreshToken: 'mock-refresh-token'
                 });
             }, 500);
         });

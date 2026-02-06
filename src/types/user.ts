@@ -6,6 +6,10 @@ export interface User {
     email: string;
     role: UserRole;
     avatarUrl?: string;
+    phone?: string;
+    address?: string;
+    bio?: string;
+    joinDate?: string;
 }
 
 export interface AuthState {

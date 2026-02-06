@@ -1,0 +1,263 @@
+import { useEffect, useState } from 'react';
+import { Plus, Filter, Search, Package, Tag, Edit2, Trash2 } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Card } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { DataTable, type Column } from '../../components/ui/DataTable';
+import { productService, type Product } from '../../services/mock/product.mock';
+import { ProductModal } from './ProductModal';
+
+export const ProductCatalog = () => {
+    const [products, setProducts] = useState<Product[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'draft' | 'archived'>('all');
+
+    // Modal State
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const fetchData = () => {
+        setIsLoading(true);
+        productService.getProducts()
+            .then(res => setProducts(res.data))
+            .finally(() => setIsLoading(false));
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const handleCreate = () => {
+        setEditingProduct(null);
+        setIsModalOpen(true);
+    };
+
+    const handleEdit = (product: Product) => {
+        setEditingProduct(product);
+        setIsModalOpen(true);
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this product?')) return;
+        setIsLoading(true);
+        try {
+            await productService.deleteProduct(id);
+            fetchData();
+        } catch (error) {
+            alert('Failed to delete product');
+            setIsLoading(false);
+        }
+    };
+
+    const handleSubmit = async (data: any) => {
+        setIsSaving(true);
+        try {
+            if (editingProduct) {
+                await productService.updateProduct(editingProduct.id, data);
+            } else {
+                await productService.createProduct(data);
+            }
+            setIsModalOpen(false);
+            fetchData();
+        } catch (error) {
+            alert('Failed to save product');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const filteredProducts = products.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    // Desktop Columns
+    const columns: Column<Product>[] = [
+        {
+            header: 'Product',
+            cell: (row) => (
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-200">
+                        {row.image ? (
+                            <img src={row.image} alt={row.name} className="h-full w-full object-cover" />
+                        ) : (
+                            <div className="h-full w-full flex items-center justify-center text-gray-400">
+                                <Package size={16} />
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        <div className="font-medium text-gray-900">{row.name}</div>
+                        <div className="text-xs text-gray-500 font-mono">{row.sku}</div>
+                    </div>
+                </div>
+            )
+        },
+        {
+            header: 'Category',
+            accessorKey: 'category',
+            cell: (row) => (
+                <div className="flex items-center gap-1.5 text-gray-600">
+                    <Tag size={14} />
+                    <span>{row.category}</span>
+                </div>
+            )
+        },
+        {
+            header: 'Price',
+            accessorKey: 'price',
+            cell: (row) => <span className="font-medium text-gray-900">${row.price.toFixed(2)}</span>
+        },
+        {
+            header: 'Stock',
+            accessorKey: 'stock',
+            cell: (row) => (
+                <div className="flex items-center gap-2">
+                    <span className={`font-medium ${row.stock <= 10 ? 'text-red-600' : 'text-gray-900'}`}>
+                        {row.stock}
+                    </span>
+                    <span className="text-gray-500 text-xs">{row.unit}</span>
+                </div>
+            )
+        },
+        {
+            header: 'Status',
+            accessorKey: 'status',
+            cell: (row) => (
+                <Badge variant={row.status === 'active' ? 'success' : row.status === 'draft' ? 'warning' : 'secondary'}>
+                    {row.status.toUpperCase()}
+                </Badge>
+            )
+        },
+        {
+            header: 'Actions',
+            cell: (row) => (
+                <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(row)} className="text-blue-600 hover:text-blue-700">
+                        <Edit2 size={16} />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(row.id)} className="text-red-600 hover:text-red-700">
+                        <Trash2 size={16} />
+                    </Button>
+                </div>
+            )
+        }
+    ];
+
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Product Catalog</h1>
+                    <p className="text-sm text-gray-500 mt-1">Manage your product inventory and pricing.</p>
+                </div>
+                <Button onClick={handleCreate} className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
+                    <Plus size={18} className="mr-2" /> Add Product
+                </Button>
+            </div>
+
+            {/* Toolbar */}
+            <Card className="border-0 shadow-sm ring-1 ring-gray-200">
+                <div className="p-4 flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <div className="relative w-full md:w-80">
+                        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <Input
+                            placeholder="Search products by name, SKU..."
+                            className="pl-10"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                        <Filter size={16} className="text-gray-400 mr-1" />
+                        <span className="text-sm text-gray-500 mr-2">Status:</span>
+                        {['all', 'active', 'draft', 'archived'].map(status => (
+                            <button
+                                key={status}
+                                onClick={() => setStatusFilter(status as any)}
+                                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors whitespace-nowrap
+                                    ${statusFilter === status
+                                        ? 'bg-blue-50 border-blue-200 text-blue-700'
+                                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                            >
+                                {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Desktop View */}
+                <div className="hidden md:block border-t border-gray-100">
+                    <DataTable
+                        data={filteredProducts}
+                        columns={columns}
+                        isLoading={isLoading}
+                        keyExtractor={item => item.id}
+                    />
+                </div>
+            </Card>
+
+            {/* Mobile View (Grid of Cards) */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+                {filteredProducts.map((product) => (
+                    <Card key={product.id} className="overflow-hidden flex flex-col shadow-sm border-gray-200">
+                        <div className="p-4 flex gap-4">
+                            <div className="h-20 w-20 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-200">
+                                {product.image ? (
+                                    <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                                ) : (
+                                    <div className="h-full w-full flex items-center justify-center text-gray-400">
+                                        <Package size={20} />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-start">
+                                    <h3 className="font-semibold text-gray-900 truncate pr-2">{product.name}</h3>
+                                    <Badge variant={product.status === 'active' ? 'success' : product.status === 'draft' ? 'warning' : 'secondary'} className="text-[10px] px-1.5 py-0.5">
+                                        {product.status}
+                                    </Badge>
+                                </div>
+                                <p className="text-xs text-gray-500 font-mono mt-0.5">{product.sku}</p>
+                                <div className="mt-2 flex items-center justify-between">
+                                    <span className="font-bold text-gray-900 text-lg">${product.price.toFixed(2)}</span>
+                                    <span className="text-sm text-gray-500">{product.stock} {product.unit} left</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-gray-50 px-4 py-3 border-t border-gray-100 flex justify-end gap-3">
+                            <Button variant="outline" size="sm" onClick={() => handleEdit(product)} className="flex-1">
+                                Edit
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleDelete(product.id)} className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                                Delete
+                            </Button>
+                        </div>
+                    </Card>
+                ))}
+                {!isLoading && filteredProducts.length === 0 && (
+                    <div className="text-center py-12 text-gray-500 bg-white rounded-lg border border-dashed border-gray-300">
+                        No products found.
+                    </div>
+                )}
+            </div>
+
+
+            <ProductModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSubmit={handleSubmit}
+                initialData={editingProduct}
+                isLoading={isSaving}
+            />
+        </div>
+    );
+};

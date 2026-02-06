@@ -3,6 +3,21 @@ import { MainLayout } from '../layouts/MainLayout';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { Login } from '../pages/auth/Login';
 import { Dashboard } from '../pages/dashboard/Dashboard';
+import { UsersList } from '../pages/users/UsersList';
+import { StoreList } from '../pages/franchise-store/StoreList';
+import { StoreDetails } from '../pages/franchise-store/StoreDetails';
+import { ProductCatalog } from '../pages/product/ProductCatalog';
+import { MaterialList } from '../pages/product/MaterialList';
+import { RecipeManager } from '../pages/product/RecipeManager';
+import { OrderList } from '../pages/orders/OrderList';
+import { CreateOrder } from '../pages/orders/CreateOrder';
+import { ProductionSchedule } from '../pages/central-kitchen/ProductionSchedule';
+import { KitchenInventory } from '../pages/central-kitchen/KitchenInventory';
+import { ShipmentList } from '../pages/shipment/ShipmentList';
+import { BillingList } from '../pages/billing/BillingList';
+import { ReportsDashboard } from '../pages/reports/ReportsDashboard';
+import { UserProfile } from '../pages/profile/UserProfile';
+import { Notifications } from '../pages/common/Notifications';
 import { ComingSoon } from '../components/ComingSoon';
 import { useAuth } from '../hooks/useAuth';
 import type { UserRole } from '../types/user';
@@ -40,13 +55,15 @@ export const router = createBrowserRouter([
                 element: <ProtectedRoute />,
                 children: [
                     { index: true, element: <Dashboard /> },
+                    { path: 'profile', element: <UserProfile /> },
+                    { path: 'notifications', element: <Notifications /> },
 
                     // Users Module (Admin Only)
                     {
                         path: 'users',
                         element: <ProtectedRoute allowedRoles={['ADMIN']} />,
                         children: [
-                            { index: true, element: <ComingSoon /> },
+                            { index: true, element: <UsersList /> },
                             { path: 'roles', element: <ComingSoon /> }
                         ]
                     },
@@ -56,7 +73,8 @@ export const router = createBrowserRouter([
                         path: 'stores',
                         element: <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']} />,
                         children: [
-                            { index: true, element: <ComingSoon /> },
+                            { index: true, element: <StoreList /> },
+                            { path: ':id', element: <StoreDetails /> },
                             { path: 'inventory', element: <ComingSoon /> },
                             { path: 'orders', element: <ComingSoon /> }
                         ]
@@ -67,7 +85,8 @@ export const router = createBrowserRouter([
                         path: 'kitchen',
                         element: <ProtectedRoute allowedRoles={['ADMIN', 'KITCHEN_STAFF']} />,
                         children: [
-                            { index: true, element: <ComingSoon /> },
+                            { index: true, element: <ProductionSchedule /> },
+                            { path: 'inventory', element: <KitchenInventory /> },
                             { path: 'production', element: <ComingSoon /> }
                         ]
                     },
@@ -77,9 +96,10 @@ export const router = createBrowserRouter([
                         path: 'products',
                         element: <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'KITCHEN_STAFF']} />,
                         children: [
-                            { index: true, element: <ComingSoon /> },
+                            { index: true, element: <ProductCatalog /> },
+                            { path: 'materials', element: <MaterialList /> },
                             { path: 'categories', element: <ComingSoon /> },
-                            { path: 'recipes', element: <ComingSoon /> }
+                            { path: 'recipes', element: <RecipeManager /> }
                         ]
                     },
 
@@ -88,9 +108,8 @@ export const router = createBrowserRouter([
                         path: 'orders',
                         element: <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'STORE_STAFF']} />,
                         children: [
-                            { index: true, element: <ComingSoon /> },
-                            { path: 'create', element: <ComingSoon /> },
-                            { path: ':id', element: <ComingSoon /> }
+                            { index: true, element: <OrderList /> },
+                            { path: 'create', element: <CreateOrder /> }
                         ]
                     },
 
@@ -99,7 +118,7 @@ export const router = createBrowserRouter([
                         path: 'billing',
                         element: <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']} />,
                         children: [
-                            { index: true, element: <ComingSoon /> },
+                            { index: true, element: <BillingList /> },
                             { path: 'invoices', element: <ComingSoon /> }
                         ]
                     },
@@ -109,7 +128,7 @@ export const router = createBrowserRouter([
                         path: 'shipment',
                         element: <ProtectedRoute allowedRoles={['ADMIN', 'SUPPLY_COORDINATOR']} />,
                         children: [
-                            { index: true, element: <ComingSoon /> }
+                            { index: true, element: <ShipmentList /> }
                         ]
                     },
 
@@ -118,7 +137,7 @@ export const router = createBrowserRouter([
                         path: 'reports',
                         element: <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']} />,
                         children: [
-                            { index: true, element: <ComingSoon /> }
+                            { index: true, element: <ReportsDashboard /> }
                         ]
                     }
                 ]

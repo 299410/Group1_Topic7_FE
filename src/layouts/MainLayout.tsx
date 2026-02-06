@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { cn } from '../utils/classNames';
@@ -12,12 +12,16 @@ import {
     FileText,
     Truck,
     BarChart,
-    LogOut
+    LogOut,
+    ChevronLeft,
+    ChevronRight,
+    Bell
 } from 'lucide-react';
 
 export const MainLayout: React.FC = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -26,6 +30,7 @@ export const MainLayout: React.FC = () => {
 
     const navigation = [
         { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+        { name: 'Notifications', href: '/notifications', icon: Bell },
         { name: 'Users', href: '/users', icon: Users, roles: ['ADMIN'] },
         { name: 'Franchise Stores', href: '/stores', icon: Store, roles: ['ADMIN', 'MANAGER'] },
         { name: 'Central Kitchen', href: '/kitchen', icon: ChefHat, roles: ['ADMIN', 'KITCHEN_STAFF'] },
@@ -43,62 +48,125 @@ export const MainLayout: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 flex">
             {/* Sidebar */}
-            <div className="w-64 bg-white shadow-lg fixed h-full z-10 hidden md:flex flex-col">
-                <div className="h-16 flex items-center px-6 border-b">
-                    <span className="text-xl font-bold text-blue-600">FranchiseSys</span>
+            <div
+                className={cn(
+                    "bg-white shadow-xl fixed h-full z-20 hidden md:flex flex-col transition-all duration-300 ease-in-out border-r border-gray-100",
+                    isCollapsed ? "w-20" : "w-64"
+                )}
+            >
+                {/* Header */}
+                <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+                    {!isCollapsed && (
+                        <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent truncate">
+                            FranchiseSys
+                        </span>
+                    )}
+                    {isCollapsed && (
+                        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold mx-auto">
+                            F
+                        </div>
+                    )}
+
+                    {!isCollapsed && (
+                        <button
+                            onClick={() => setIsCollapsed(true)}
+                            className="p-1.5 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                        >
+                            <ChevronLeft size={18} />
+                        </button>
+                    )}
                 </div>
 
-                <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                {/* Collapsed Toggle Button (Floating when collapsed) */}
+                {isCollapsed && (
+                    <button
+                        onClick={() => setIsCollapsed(false)}
+                        className="absolute -right-3 top-20 bg-white border border-gray-200 shadow-sm p-1 rounded-full text-gray-500 hover:text-blue-600 z-50 transform hover:scale-110 transition-all"
+                    >
+                        <ChevronRight size={14} />
+                    </button>
+                )}
+
+                {/* Navigation */}
+                <nav className="flex-1 p-3 space-y-1 overflow-y-auto mt-2 custom-scrollbar">
                     {filteredNav.map((item) => {
                         const Icon = item.icon;
                         return (
                             <NavLink
                                 key={item.name}
                                 to={item.href}
+                                title={isCollapsed ? item.name : undefined}
                                 className={({ isActive }) =>
                                     cn(
-                                        'flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors',
+                                        'flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 group relative',
                                         isActive
-                                            ? 'bg-blue-50 text-blue-700'
-                                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                                            ? 'bg-blue-50 text-blue-700 shadow-sm'
+                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                                        isCollapsed ? 'justify-center' : ''
                                     )
                                 }
                             >
-                                <Icon className="mr-3 h-5 w-5" />
-                                {item.name}
+                                <Icon className={cn("h-5 w-5 transition-transform group-hover:scale-110", !isCollapsed && "mr-3")} />
+                                {!isCollapsed && <span>{item.name}</span>}
+
+                                {/* Active Indicator Bar */}
+                                {isCollapsed && (
+                                    <NavLink
+                                        to={item.href}
+                                        className={({ isActive }) => isActive ? "absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-blue-600 rounded-r-full" : "hidden"}
+                                    />
+                                )}
                             </NavLink>
                         );
                     })}
                 </nav>
 
-                <div className="p-4 border-t">
-                    <div className="flex items-center mb-4 px-2">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
+                {/* Footer / User Profile */}
+                <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+                    <div
+                        className={cn(
+                            "flex items-center cursor-pointer hover:bg-white p-2 rounded-xl transition-all border border-transparent hover:border-gray-200 hover:shadow-sm",
+                            isCollapsed ? "justify-center" : "px-3"
+                        )}
+                        onClick={() => navigate('/profile')}
+                        title="My Profile"
+                    >
+                        <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-sm">
                             {user?.name.charAt(0)}
                         </div>
-                        <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-700">{user?.name}</p>
-                            <p className="text-xs text-gray-500">{user?.role.replace('_', ' ')}</p>
-                        </div>
+                        {!isCollapsed && (
+                            <div className="ml-3 overflow-hidden">
+                                <p className="text-sm font-semibold text-gray-700 truncate">{user?.name}</p>
+                                <p className="text-xs text-gray-500 truncate">{user?.role.replace('_', ' ')}</p>
+                            </div>
+                        )}
                     </div>
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-2 text-sm font-medium text-red-600 rounded-md hover:bg-red-50 transition-colors"
-                    >
-                        <LogOut className="mr-3 h-5 w-5" />
-                        Sign out
-                    </button>
+                    {!isCollapsed && (
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center w-full px-3 py-2 mt-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                        >
+                            <LogOut className="mr-3 h-4 w-4" />
+                            Sign out
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
-                <header className="h-16 bg-white shadow-sm flex items-center justify-between px-4 md:px-8 border-b md:hidden">
+            <div
+                className={cn(
+                    "flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out",
+                    "md:ml-64",
+                    isCollapsed && "md:ml-20"
+                )}
+            >
+                <header className="h-16 bg-white shadow-sm flex items-center justify-between px-4 md:px-8 border-b md:hidden z-10 sticky top-0">
                     <span className="text-lg font-bold text-blue-600">FranchiseSys</span>
                     {/* Mobile menu button could go here */}
                 </header>
 
-                <main className="flex-1 p-4 md:p-8 overflow-auto">
+                <main className="flex-1 p-4 md:p-8 overflow-auto w-full max-w-[1600px] mx-auto">
                     <Outlet />
                 </main>
             </div>
